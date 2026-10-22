@@ -1,0 +1,6 @@
+{
+  "name": "my-font-hcaptcha",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}

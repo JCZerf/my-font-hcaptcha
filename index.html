@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NotaLab · Consulta pública</title>
+  <style>
+    :root { --bg: #eef2f6; --card: #fff; --text: #17212b; --muted: #5b6b7a; --line: #d6dee6;
+            --brand: #009739; --brand-dark: #00702a; --accent: #fedd00; --accent-text: #3d3500; --ok: #0f7b4b; --ok-bg: #e3f6ec;
+            --bad: #b42318; --bad-bg: #fdecea; --warn: #8a5a00; --warn-bg: #fff3d6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+           font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .topbar { background: var(--accent); color: var(--accent-text); font-weight: 600; font-size: 12px; padding: 6px 24px; }
+    header { background: var(--brand); color: #fff; padding: 18px 24px; border-bottom: 4px solid var(--accent); display: flex; align-items: center;
+             gap: 12px; }
+    .logo { width: 36px; height: 36px; border-radius: 8px; background: var(--accent); color: var(--brand-dark);
+            display: grid; place-items: center; font-weight: 800; }
+    header h1 { margin: 0; font-size: 18px; }
+    header p { margin: 2px 0 0; font-size: 13px; opacity: .85; }
+    main { max-width: 640px; margin: 28px auto; padding: 0 16px; }
+    .crumbs { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px; }
+    .card h2 { margin: 0 0 4px; font-size: 20px; }
+    .card > p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    input { width: 100%; padding: 11px 12px; font-size: 15px; letter-spacing: .5px;
+            font-family: ui-monospace, monospace; border: 1px solid var(--line); border-radius: 6px; }
+    input:focus { outline: 2px solid var(--brand); border-color: transparent; }
+    .count { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .count .done { color: var(--ok); font-weight: 600; }
+    .captcha { display: flex; justify-content: center; margin: 20px 0; min-height: 78px; }
+    .actions { display: flex; gap: 8px; }
+    button { flex: 1; padding: 11px; font-size: 15px; font-weight: 600; border-radius: 6px; cursor: pointer; }
+    .primary { color: #fff; background: var(--brand); border: 0; }
+    .primary:hover:not(:disabled) { background: var(--brand-dark); }
+    .secondary { color: var(--brand); background: #fff; border: 1px solid var(--line); flex: 0 0 120px; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .overlay { position: fixed; inset: 0; background: rgba(15, 23, 32, .55); display: grid;
+               place-items: center; padding: 16px; z-index: 10; animation: fade .15s ease-out; }
+    .modal { background: var(--card); width: 100%; max-width: 480px; border-radius: 12px;
+             box-shadow: 0 20px 50px rgba(0, 0, 0, .25); overflow: hidden; animation: rise .18s ease-out; }
+    .modal-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px; }
+    .modal-head.ok { background: var(--ok-bg); color: var(--ok); }
+    .modal-head.bad { background: var(--bad-bg); color: var(--bad); }
+    .modal-head.warn { background: var(--warn-bg); color: var(--warn); }
+    .icon { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+            background: currentColor; flex: none; }
+    .icon span { color: #fff; font-weight: 800; font-size: 18px; }
+    .modal-head h3 { margin: 0; font-size: 17px; }
+    .modal-head p { margin: 2px 0 0; font-size: 13px; opacity: .9; }
+    .modal-body { padding: 16px 20px; }
+    .modal-body h4 { margin: 16px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+                     color: var(--muted); }
+    .modal-body h4:first-child { margin-top: 0; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.yes { background: var(--ok-bg); color: var(--ok); }
+    .badge.no { background: var(--bad-bg); color: var(--bad); }
+    .modal-foot { padding: 12px 20px 20px; display: flex; justify-content: flex-end; }
+    .modal-foot button { flex: 0 0 140px; }
+    table { width: 100%; border-collapse: collapse; color: var(--text); }
+    th, td { text-align: left; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px;
+             vertical-align: top; }
+    tr:last-child th, tr:last-child td { border-bottom: 0; }
+    th { width: 40%; color: var(--muted); font-weight: 600; padding-right: 8px; }
+    td code { font-size: 12px; word-break: break-all; }
+    .success { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 10px;
+               background: var(--ok-bg); color: var(--ok); margin-bottom: 16px; }
+    .success h2 { margin: 0; font-size: 20px; }
+    .success p { margin: 2px 0 0; font-size: 14px; opacity: .9; }
+    .card h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .6px;
+               color: var(--muted); }
+    .card + .card { margin-top: 16px; }
+    .page-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .page-actions button { flex: 0 0 auto; padding: 11px 20px; }
+    @keyframes fade { from { opacity: 0; } }
+    @keyframes rise { from { transform: translateY(8px); opacity: 0; } }
+    footer { text-align: center; font-size: 12px; color: var(--muted); margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <div class="topbar">Ambiente de testes · dados fictícios</div>
+  <header>
+    <div class="logo">NL</div>
+    <div>
+      <h1>NotaLab</h1>
+      <p>Consulta pública de chave</p>
+    </div>
+  </header>
+  <main id="app"></main>
+  <footer>NotaLab é uma fonte de testes, sem relação com nenhum órgão público.</footer>
+
+  <script type="module">
+    import React, { useEffect, useRef, useState } from "https://esm.sh/react@18.3.1";
+    import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+    import htm from "https://esm.sh/htm@3.1.1";
+
+    const html = htm.bind(React.createElement);
+    const KEY_LENGTH = 50;
+
+    // Cada resposta da fonte com a cor e o texto que uma pessoa veria.
+    const OUTCOMES = {
+      ok: ["ok", "Chave encontrada"],
+      "not-found": ["warn", "Chave não encontrada"],
+      "invalid-key-format": ["warn", "Chave de acesso inválida"],
+      "invalid-captcha": ["bad", "Captcha recusado"],
+      "missing-token": ["bad", "Complete o desafio"],
+      "not-configured": ["bad", "Fonte sem chave cadastrada"],
+      "siteverify-unreachable": ["bad", "O hCaptcha não respondeu"],
+    };
+
+    const money = (value) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const groups = (digits) => digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+
+    function loadHcaptcha() {
+      if (window.hcaptcha) return Promise.resolve(window.hcaptcha);
+      return new Promise((resolve) => {
+        window.onHcaptchaLoad = () => resolve(window.hcaptcha);
+        const script = document.createElement("script");
+        script.src = "https://js.hcaptcha.com/1/api.js?onload=onHcaptchaLoad&render=explicit";
+        script.async = true;
+        document.head.appendChild(script);
+      });
+    }
+
+    function Captcha({ onToken, resetKey }) {
+      const box = useRef(null);
+      const widget = useRef(null);
+      useEffect(() => {
+        let cancelled = false;
+        (async () => {
+          const [{ sitekey }, hcaptcha] = await Promise.all([
+            fetch("/api/sitekey").then((r) => r.json()),
+            loadHcaptcha(),
+          ]);
+          if (cancelled || widget.current !== null) return;
+          widget.current = hcaptcha.render(box.current, {
+            sitekey,
+            callback: onToken,
+            "expired-callback": () => onToken(""),
+            "error-callback": () => onToken(""),
+          });
+        })();
+        return () => { cancelled = true; };
+      }, []);
+      // O token vale uma vez: depois de cada consulta o widget volta ao início.
+      useEffect(() => {
+        if (resetKey && widget.current !== null) window.hcaptcha.reset(widget.current);
+      }, [resetKey]);
+      return html`<div class="captcha" ref=${box}></div>`;
+    }
+
+    function Note({ nfse }) {
+      const rows = [
+        ["Chave de acesso", html`<code>${groups(nfse.chave)}</code>`],
+        ["Número", nfse.numero],
+        ["Emissão", new Date(nfse.emissao + "T12:00:00").toLocaleDateString("pt-BR")],
+        ["Situação", nfse.situacao],
+        ["Prestador", `${nfse.prestador.nome} (${nfse.prestador.documento})`],
+        ["Tomador", nfse.tomador.nome],
+        ["Serviço", nfse.servico],
+        ["Valor", money(nfse.valor)],
+      ];
+      return html`<table><tbody>
+        ${rows.map(([label, value]) => html`<tr key=${label}><th>${label}</th><td>${value}</td></tr>`)}
+      </tbody></table>`;
+    }
+
+    const ICONS = { ok: "✓", warn: "!", bad: "✕" };
+    // O texto do resultado, como a fonte explicaria a uma pessoa.
+    const DETAILS = {
+      ok: "Registro localizado para a chave informada.",
+      "not-found": "Nenhum registro encontrado para a chave informada.",
+      "invalid-key-format": "A chave de acesso deve ter 50 dígitos.",
+      "invalid-captcha": "O hCaptcha não aceitou a verificação.",
+      "missing-token": "Complete o desafio do hCaptcha antes de consultar.",
+      "not-configured": "A fonte não tem uma chave cadastrada.",
+      "siteverify-unreachable": "Não foi possível falar com o hCaptcha.",
+    };
+
+    function Verification({ hcaptcha }) {
+      const codes = hcaptcha["error-codes"]?.join(", ");
+      const solved = hcaptcha.challenge_ts && new Date(hcaptcha.challenge_ts).toLocaleString("pt-BR");
+      return html`
+        <h4>Verificação do hCaptcha</h4>
+        <table><tbody>
+          <tr><th>Aceito</th><td>
+            <span class=${`badge ${hcaptcha.success ? "yes" : "no"}`}>${hcaptcha.success ? "Sim" : "Não"}</span>
+          </td></tr>
+          ${hcaptcha.hostname && html`<tr><th>Domínio</th><td><code>${hcaptcha.hostname}</code></td></tr>`}
+          ${solved && html`<tr><th>Resolvido em</th><td>${solved}</td></tr>`}
+          ${codes && html`<tr><th>Códigos</th><td><code>${codes}</code></td></tr>`}
+        </tbody></table>`;
+    }
+
+    // A chave encontrada vira uma tela própria, como numa fonte de verdade: o registro e, abaixo,
+    // a verificação do hCaptcha. Erros continuam no popup, sobre o formulário.
+    function ResultPage({ result, onBack }) {
+      return html`
+        <div class="crumbs">Início › Consultas › Chave › Resultado</div>
+        <div class="success">
+          <div class="icon"><span>✓</span></div>
+          <div>
+            <h2>Chave encontrada</h2>
+            <p>${DETAILS.ok}</p>
+          </div>
+        </div>
+        <section class="card">
+          <h3>Registro</h3>
+          <${Note} nfse=${result.nfse} />
+        </section>
+        ${result.hcaptcha && html`
+          <section class="card"><${Verification} hcaptcha=${result.hcaptcha} /></section>`}
+        <div class="page-actions">
+          <button class="primary" type="button" onClick=${onBack}>Nova consulta</button>
+          <button class="secondary" type="button" onClick=${() => window.print()}>Imprimir</button>
+        </div>`;
+    }
+
+    function ResultModal({ result, onClose }) {
+      const key = result.ok ? "ok" : result.error;
+      const [tone, title] = OUTCOMES[key] || ["bad", "Erro na consulta"];
+      useEffect(() => {
+        const close = (event) => event.key === "Escape" && onClose();
+        window.addEventListener("keydown", close);
+        return () => window.removeEventListener("keydown", close);
+      }, []);
+      return html`
+        <div class="overlay" onClick=${(e) => e.target === e.currentTarget && onClose()}>
+          <div class="modal" role="dialog" aria-modal="true" aria-labelledby="result-title">
+            <div class=${`modal-head ${tone}`}>
+              <div class="icon"><span>${ICONS[tone]}</span></div>
+              <div>
+                <h3 id="result-title">${title}</h3>
+                <p>${DETAILS[key] || ""}</p>
+              </div>
+            </div>
+            <div class="modal-body">
+              ${result.nfse && html`<h4>Registro</h4><${Note} nfse=${result.nfse} />`}
+              ${result.hcaptcha && html`<${Verification} hcaptcha=${result.hcaptcha} />`}
+            </div>
+            <div class="modal-foot">
+              <button class="primary" type="button" onClick=${onClose} autofocus>Fechar</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function App() {
+      const [chave, setChave] = useState("");
+      const [token, setToken] = useState("");
+      const [sending, setSending] = useState(false);
+      const [result, setResult] = useState(null);
+      const [resets, setResets] = useState(0);
+      const [found, setFound] = useState(null);
+      const complete = chave.length === KEY_LENGTH;
+
+      // A tela de resultado entra no histórico: o Voltar do navegador leva ao formulário.
+      useEffect(() => {
+        const back = () => setFound(window.location.hash === "#resultado" ? found : null);
+        window.addEventListener("popstate", back);
+        return () => window.removeEventListener("popstate", back);
+      }, [found]);
+
+      function backToForm() {
+        if (window.location.hash === "#resultado") window.history.back();
+        setFound(null);
+      }
+
+      async function submit(event) {
+        event.preventDefault();
+        setSending(true);
+        const body = new URLSearchParams({
+          chave, "h-captcha-response": token, "g-recaptcha-response": token,
+        });
+        try {
+          const response = await fetch("/api/consulta", {
+            method: "POST", headers: { Accept: "application/json" }, body,
+          });
+          const answer = await response.json();
+          if (answer.ok) {
+            setFound(answer);
+            window.history.pushState(null, "", "#resultado");
+            window.scrollTo(0, 0);
+          } else {
+            setResult(answer);
+          }
+        } catch {
+          setResult({ ok: false, error: "siteverify-unreachable" });
+        } finally {
+          setSending(false);
+          setToken("");
+          setResets((n) => n + 1);
+        }
+      }
+
+      function clear() {
+        setChave("");
+        setResult(null);
+      }
+
+      if (found) return html`<${ResultPage} result=${found} onBack=${backToForm} />`;
+
+      return html`
+        <div class="crumbs">Início › Consultas › Chave</div>
+        <form class="card" onSubmit=${submit}>
+          <h2>Consulta pública de chave</h2>
+          <p>Informe a chave de acesso de 50 dígitos.</p>
+          <label for="chave">Chave de acesso</label>
+          <input id="chave" inputmode="numeric" value=${chave} autocomplete="off"
+                 placeholder="00000000000000000000000000000000000000000000000000"
+                 onInput=${(e) => setChave(e.target.value.replace(/\D/g, "").slice(0, KEY_LENGTH))} />
+          <div class="count">
+            <span>Somente números</span>
+            <span class=${complete ? "done" : ""}>${chave.length}/${KEY_LENGTH}</span>
+          </div>
+          <${Captcha} onToken=${setToken} resetKey=${resets} />
+          <div class="actions">
+            <button class="primary" type="submit" disabled=${!token || !complete || sending}>
+              ${sending ? "Consultando..." : "Consultar"}
+            </button>
+            <button class="secondary" type="button" onClick=${clear}>Limpar</button>
+          </div>
+        </form>
+        ${result && html`<${ResultModal} result=${result} onClose=${() => setResult(null)} />`}`;
+    }
+
+    createRoot(document.getElementById("app")).render(html`<${App} />`);
+  </script>
+</body>
+</html>
